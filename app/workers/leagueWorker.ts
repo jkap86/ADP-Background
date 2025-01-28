@@ -161,7 +161,8 @@ const leagueUpdate = async () => {
   );
 
   const new_users = users.filter(
-    (user: User) => !existing_users.rows.some((u) => u.user_id === user.user_id)
+    (user: User) =>
+      !existing_users.rows.some((u: User) => u.user_id === user.user_id)
   );
 
   if (new_users.length > 0) {
