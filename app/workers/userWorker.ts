@@ -93,7 +93,9 @@ const userUpdate = async () => {
 
   const new_leagues = leagues.filter(
     (league) =>
-      !existing_leagues.rows.some((l) => l.league_id === league.league_id)
+      !existing_leagues.rows.some(
+        (l: League) => l.league_id === league.league_id
+      )
   );
 
   if (new_leagues.length > 0) {
