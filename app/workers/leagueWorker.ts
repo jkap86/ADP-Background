@@ -31,10 +31,10 @@ const leagueUpdate = async () => {
   for (let i = 0; i < leagues_to_update.rows.length; i += batch_size) {
     const batch = leagues_to_update.rows.slice(i, i + batch_size);
 
-    const league_ids = batch.map((league) => league.league_id);
+    const league_ids = batch.map((league: League) => league.league_id);
 
     await Promise.all(
-      league_ids.map(async (league_id) => {
+      league_ids.map(async (league_id: string) => {
         try {
           const [updated_league, league_users, league_drafts] =
             await Promise.all([
@@ -161,7 +161,7 @@ const leagueUpdate = async () => {
   );
 
   const new_users = users.filter(
-    (user) => !existing_users.rows.some((u) => u.user_id === user.user_id)
+    (user: User) => !existing_users.rows.some((u) => u.user_id === user.user_id)
   );
 
   if (new_users.length > 0) {
