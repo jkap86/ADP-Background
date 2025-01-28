@@ -25,7 +25,7 @@ const userUpdate = async () => {
     const user_ids = batch.map((user) => user.user_id);
 
     await Promise.all(
-      user_ids.map(async (user_id) => {
+      user_ids.map(async (user_id: string) => {
         try {
           const [updated_user, user_leagues] = await Promise.all([
             axiosInstance.get(`https://api.sleeper.app/v1/user/${user_id}`),
