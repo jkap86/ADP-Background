@@ -19,8 +19,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "init-db": "node scripts/init-db.js",
-    "start": "npx tsc && node dist/server.js",
-    "heroku-postbuild": "npm run init-db"
+    "build": "npx tsc",
+    "serve": "node dist/server.js",
+    "postinstall": "npm run init-db"
   },
   "author": "",
   "license": "ISC",
