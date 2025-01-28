@@ -18,6 +18,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm install && npm run build && npm run serve",
     "init-db": "node scripts/init-db.js",
     "build": "npx tsc",
     "serve": "node dist/server.js",
