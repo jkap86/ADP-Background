@@ -22,7 +22,7 @@ const userUpdate = async () => {
   for (let i = 0; i < users_to_update.rows.length; i += batch_size) {
     const batch = users_to_update.rows.slice(i, i + batch_size);
 
-    const user_ids = batch.map((user) => user.user_id);
+    const user_ids = batch.map((user: { user_id: string }) => user.user_id);
 
     await Promise.all(
       user_ids.map(async (user_id: string) => {
