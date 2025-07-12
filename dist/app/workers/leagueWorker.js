@@ -2,18 +2,28 @@ import { pool } from "../lib/pool.js";
 import axiosInstance from "../lib/axiosInstance.js";
 const leagueUpdate = async () => {
     console.log("Begin League update");
-    const leagues_to_update = await pool.query(`SELECT DISTINCT l.league_id, l.updated_at 
+    const leagues_to_update = await pool.query(`
+    SELECT DISTINCT l.league_id, l.updated_at 
     FROM adp__leagues l 
-    WHERE l.status != 'in_season'
-    OR NOT EXISTS (
-      SELECT 1
-      FROM adp__drafts d
-      WHERE d.league_id = l.league_id
-      AND d.status = 'complete'
-      AND d.updated_at > d.last_picked
-    )
+    WHERE l.season = $1
+      AND (
+        NOT EXISTS (
+          SELECT 1
+          FROM adp__drafts d
+          WHERE d.league_id = l.league_id
+        )
+
+        OR EXISTS (
+          SELECT 1
+          FROM adp__drafts d
+          WHERE d.league_id = l.league_id
+            AND d.status <> 'complete'
+        )
+      )
     ORDER BY l.updated_at ASC NULLS FIRST 
-    LIMIT 250`);
+    LIMIT 250
+    `, [process.env.SEASON]);
+    console.log({ leagues_to_update: leagues_to_update.rows.length });
     const updated_leagues = [];
     const users = [];
     const drafts = [];
