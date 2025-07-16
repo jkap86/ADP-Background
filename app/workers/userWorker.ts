@@ -6,7 +6,11 @@ const userUpdate = async () => {
   console.log("Begin User update");
 
   const users_to_update = await pool.query(
-    "SELECT user_id FROM adp__users ORDER BY updated_at ASC NULLS FIRST LIMIT 250"
+    `SELECT user_id FROM adp__users 
+    ORDER BY 
+      (updated_at IS NOT DISTINCT FROM created_at) DESC,
+      updated_at ASC 
+    LIMIT 250`
   );
 
   const updated_users: {
