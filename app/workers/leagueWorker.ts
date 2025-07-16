@@ -7,7 +7,7 @@ const leagueUpdate = async () => {
 
   const leagues_to_update = await pool.query(
     `
-    SELECT DISTINCT l.league_id, l.updated_at 
+    SELECT l.league_id, l.updated_at 
     FROM adp__leagues l 
     WHERE l.season = $1
       AND (
@@ -24,7 +24,9 @@ const leagueUpdate = async () => {
             AND d.status <> 'complete'
         )
       )
-    ORDER BY l.updated_at ASC NULLS FIRST 
+    ORDER BY 
+      (l.updated_at IS NOT DISTINCT FROM l.created_at) DESC,
+      l.updated_at ASC 
     LIMIT 250
     `,
     [process.env.SEASON]
@@ -190,17 +192,38 @@ const leagueUpdate = async () => {
 
   if (drafts.length > 0) {
     console.log(`Upserting ${drafts.length} drafts into database`);
-    await pool.query(
-      `INSERT INTO adp__drafts (draft_id, status, type, settings, start_time, last_picked, league_id, picks, updated_at) VALUES ${drafts
-        .map(
-          (_, i) =>
-            `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${
-              i * 9 + 5
-            }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
-        )
-        .join(
-          ", "
-        )} ON CONFLICT (draft_id) DO UPDATE SET status = EXCLUDED.status, type = EXCLUDED.type, settings = EXCLUDED.settings, start_time = EXCLUDED.start_time, last_picked = EXCLUDED.last_picked, league_id = EXCLUDED.league_id, picks = EXCLUDED.picks, updated_at = NOW()`,
+    const response = await pool.query(
+      `
+      WITH upsert AS (
+        INSERT INTO adp__drafts AS d (draft_id, status, type, settings, start_time, last_picked, league_id, picks, updated_at) 
+        VALUES ${drafts
+          .map(
+            (_, i) =>
+              `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${
+                i * 9 + 5
+              }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
+          )
+          .join(", ")} 
+        ON CONFLICT (draft_id) DO UPDATE 
+                SET status = EXCLUDED.status, 
+                    type = EXCLUDED.type, 
+                    settings = EXCLUDED.settings, 
+                    start_time = EXCLUDED.start_time, 
+                    last_picked = EXCLUDED.last_picked, 
+                    league_id = EXCLUDED.league_id, 
+                    picks = EXCLUDED.picks, 
+                    updated_at = NOW()
+        RETURNING
+          (xmax = 0)::int AS inserted,
+          ((xmax = 0) AND d.status = 'complete')::int AS inserted_complete,
+          ((xmax <> 0) AND d.status = 'complete')::int AS became_complete
+      )
+      
+      SELECT  SUM(inserted) AS inserted_count,
+              SUM(inserted_complete) AS inserted_complete_count,
+              SUM(became_complete) AS became_complete_count
+      FROM    upsert;
+      `,
       drafts.flatMap((draft) => [
         draft.draft_id,
         draft.status,
@@ -213,6 +236,8 @@ const leagueUpdate = async () => {
         new Date(),
       ])
     );
+
+    console.log(response.rows[0]);
   }
 
   console.log("League update complete");

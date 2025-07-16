@@ -11,3 +11,5 @@ CREATE TABLE IF NOT EXISTS adp__drafts (
   picks JSONB DEFAULT '{}',
   CONSTRAINT fk_league FOREIGN KEY (league_id) REFERENCES adp__leagues(league_id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS adp__drafts_league_status ON adp__drafts (league_id, status);
